@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Create Bill</h3>
+<form method="post">
+    {% csrf_token %}
+    {{ bill_date_form.as_p }}
+    {{ formset.management_form }}
+    {% for form in formset %}
+        {{ form.as_p }}
+    {% endfor %}
+    <button class="btn btn-primary" type="submit">Generate PDF</button>
+</form>
+{% endblock %}

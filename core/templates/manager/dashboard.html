@@ -1,0 +1,33 @@
+<!-- templates/manager/dashboard.html -->
+{% extends "base.html" %}
+{% block content %}
+<h2>Manager Dashboard</h2>
+<a href="{% url 'agent_create' %}">Create New Agent</a>
+<a href="{% url 'transaction_create' %}">Add Transaction</a>
+
+<h3>Agents</h3>
+<ul>
+    {% for agent in agents %}
+    <li>
+        {{ agent.name }} - {{ agent.phone_number }}
+        <a href="{% url 'agent_update' agent.pk %}">Edit</a> |
+        <a href="{% url 'agent_delete' agent.pk %}">Delete</a> |
+        <a href="{% url 'agent_block_toggle' agent.pk %}">
+            {% if agent.is_active %}Block{% else %}Unblock{% endif %}
+        </a>
+    </li>
+    {% endfor %}
+</ul>
+
+<h3>Transactions</h3>
+<ul>
+    {% for txn in transactions %}
+    <li>{{ txn.agent.name }} - ₹{{ txn.amount }} ({{ txn.transaction_type }})</li>
+    {% endfor %}
+</ul>
+
+
+<a href="{% url 'logout' %}">Logout</a>
+{% endblock %}
+
+

@@ -1,0 +1,21 @@
+<!-- templates/manager/transaction_form.html -->
+{% extends "base.html" %}
+{% block content %}
+<h2>Create Transaction</h2>
+<form method="post">
+    {% csrf_token %}
+    <label>Agent:</label>
+    <select name="agent_id">
+        {% for agent in agents %}
+        <option value="{{ agent.id }}">{{ agent.name }}</option>
+        {% endfor %}
+    </select><br>
+    <label>Amount:</label><input type="number" name="amount"><br>
+    <label>Type:</label>
+    <select name="transaction_type">
+        <option value="Credit">Credit</option>
+        <option value="Debit">Debit</option>
+    </select><br>
+    <button type="submit">Submit</button>
+</form>
+{% endblock %}
