@@ -1,6 +1,6 @@
 ﻿asgiref==3.7.2
 chardet==5.2.0
-Django==5.2
+Django==3.2.25
 pillow==11.2.1
 psycopg2-binary==2.9.10
 python-decouple==3.8
