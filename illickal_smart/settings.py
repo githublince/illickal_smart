@@ -19,10 +19,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-from decouple import config
-SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: keep the secret key used in production secret!
-# SECRET_KEY = 'django-insecure-1r81=x+j!cf%##4os3@z@#hg&zo4aw!==erodd5u#sv+k%9io5'
+SECRET_KEY = 'django-insecure-1r81=x+j!cf%##4os3@z@#hg&zo4aw!==erodd5u#sv+k%9io5'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -50,7 +48,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'illickal_smart.urls'
@@ -118,7 +115,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-SECRET_KEY= 'xWBrVH3mWV_GGrervZMa1T-09VZnyemjMfd-81mca6cBzAGLrgXQZkXPXuFkW_7vPtI'
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -128,13 +125,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-#STATIC_URL = '/static/'
-#STATICFILES_DIRS = [os.path.join(BASE_DIR, 'core/static')]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'core/static')]
 
 #LOGIN_REDIRECT_URL = 'agent_dashboard'
 #LOGIN_REDIRECT_URL = '/manager/dashboard/'
