@@ -1,12 +1,10 @@
-﻿asgiref==3.7.2
+
+asgiref==3.8.1
 chardet==5.2.0
-Django==3.2.25
-pillow==9.5.0
-psycopg2-binary==2.9.9
-python-decouple==3.8
+Django==5.2
+pillow==11.2.1
+psycopg2-binary==2.9.10
 reportlab==4.4.0
-sqlparse==0.4.4
+sqlparse==0.5.3
 tzdata==2025.2
-whitenoise==6.5.0
-gunicorn==20.1.0
 
