@@ -1,10 +1,104 @@
-<!-- templates/manager/agent_form.html -->
 {% extends "base.html" %}
 {% block content %}
-<h2>Agent Form</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Save</button>
-</form>
+
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <h2 class="mb-4 text-center">{{ form_title|default:"Create Agent" }}</h2>
+    <form method="post" class="card p-4 shadow-sm">
+      {% csrf_token %}
+      
+     
+      <!-- Non-field errors -->
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+          {% for error in form.non_field_errors %}
+            {{ error }}
+          {% endfor %}
+        </div>
+      {% endif %}
+      
+
+      <!-- Username -->
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.username.id_for_label }}">Username</label>
+        {{ form.username }}
+        {% for error in form.username.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <!-- Password -->
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.password.id_for_label }}">Password</label>
+        {{ form.password }}
+        {% for error in form.password.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <!-- Name -->
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.name.id_for_label }}">Name</label>
+        {{ form.name }}
+        {% for error in form.name.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <!-- Phone Number -->
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.phone_number.id_for_label }}">Phone Number</label>
+        {{ form.phone_number }}
+        {% for error in form.phone_number.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <!-- WhatsApp Number -->
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.whatsapp_number.id_for_label }}">WhatsApp Number</label>
+        {{ form.whatsapp_number }}
+        {% for error in form.whatsapp_number.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <!-- Same as Phone Checkbox -->
+      <div class="form-check mb-3">
+        {{ form.same_as_phone }}
+        <label class="form-check-label" for="{{ form.same_as_phone.id_for_label }}">
+          WhatsApp same as phone
+        </label>
+      </div>
+
+      <!-- Address -->
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.address.id_for_label }}">Address</label>
+        {{ form.address }}
+        {% for error in form.address.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <!-- Pincode -->
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.pincode.id_for_label }}">Pincode</label>
+        {{ form.pincode }}
+        {% for error in form.pincode.errors %}
+          <div class="text-danger small">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <!-- Is Active -->
+      <div class="form-check mb-3">
+        {{ form.is_active }}
+        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+          Active
+        </label>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100">Save Agent</button>
+    </form>
+  </div>
+</div>
 {% endblock %}

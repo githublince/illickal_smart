@@ -5,11 +5,21 @@ from django.contrib.auth.models import User, Group
 from django.contrib import messages
 from django.forms import modelformset_factory
 from django.http import FileResponse, HttpResponseForbidden
-from .forms import AgentForm, StoreForm, BillDateForm, BillForm
-from .models import Agent, Manager, Store, Transaction, BillDate, Bill, Product
+from core.forms import AgentForm, StoreForm, BillDateForm, BillForm
+from core.models import Agent, Manager, Store, Transaction, BillDate, Bill, Product
 from .utils import generate_bill_pdf
 from django.contrib.auth import login as auth_login
-
+from django import forms
+from django.contrib.auth.models import User, Group
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from core.forms import AgentForm
+from .models import Agent, Manager
+from django.contrib.auth.models import User, Group
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from .models import Agent, Manager
 
 # Home page with Signup/Login links
 def home(request):
@@ -17,12 +27,13 @@ def home(request):
 
 # === AUTH SYSTEM ===
 
-# core/views.py
 
-from django.contrib.auth.models import User, Group
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from .models import Agent, Manager
+from django.shortcuts import render
+from core.forms import AgentForm
+
+def test_agent_form(request):
+    form = AgentForm()
+    return render(request, 'test_form.html', {'form': form})
 
 
 def signup_manager(request):
@@ -109,21 +120,60 @@ def download_bill(request, billno):
 
 # === MANAGER FEATURES ===
 
+
+
+
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseForbidden
+from django.shortcuts import render, redirect
+from django.contrib.auth.models import Group
+from django.contrib import messages
+from core.forms import AgentForm
+from .models import Manager
+
 @login_required
 def agent_create(request):
+
+    print(f"Request User: {request.user} (ID: {request.user.id})")
+    
+    # Ensure only Managers can access
     if not request.user.groups.filter(name='Manager').exists():
-        return HttpResponseForbidden("Unauthorized")
+        return HttpResponseForbidden("Unauthorized access. You must be a Manager.")
+
     if request.method == 'POST':
         form = AgentForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Agent created.")
-            return redirect('manager_dashboard')
+            try:
+                # Get manager instance
+                manager = Manager.objects.get(user=request.user)
+
+                # Save agent without committing to DB yet
+                agent = form.save(commit=False)
+                agent.manager = manager
+                agent.save()  # Save agent to DB
+
+                # Add the new user to the Agent group
+                agent_group, _ = Group.objects.get_or_create(name='Agent')
+                agent.user.groups.add(agent_group)
+
+                messages.success(request, "Agent created successfully.")
+                return redirect('manager_dashboard')
+
+            except Manager.DoesNotExist:
+                return HttpResponseForbidden("Manager record not found.")
+            except Exception as e:
+                form.add_error(None, f"An error occurred while saving: {str(e)}")
     else:
         form = AgentForm()
-    return render(request, 'manager/agent_form.html', {'form': form})
+    
+    return render(request, 'manager/agent_form.html', {
+        'form': form,
+        'form_title': 'Create Agent'
+    })
 
 
+
+ 
 @login_required
 def agent_update(request, pk):
     if not request.user.groups.filter(name='Manager').exists():
@@ -167,6 +217,7 @@ def transaction_create(request):
     if not request.user.groups.filter(name='Manager').exists():
         return HttpResponseForbidden("Unauthorized")
     if request.method == 'POST':
+        print("\n\n\n\n\n",request.POST['agent_id'],"\n\n\n\n\n")
         agent_id = request.POST['agent_id']
         amount = request.POST['amount']
         type_ = request.POST['transaction_type']
@@ -182,55 +233,92 @@ def transaction_create(request):
     return render(request, 'manager/transaction_form.html', {'agents': agents})
 
 
-@login_required
-def agent_create(request):
-    if not request.user.groups.filter(name='Manager').exists():
-        return HttpResponseForbidden("Unauthorized")
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login as auth_login
+from django.contrib import messages
+from .models import Agent, Transaction, AgentBalance
+from django.utils import timezone
+from datetime import datetime
+from django.db.models import Sum, Case, When, Value, DecimalField, F
+import logging
+
+# Set up logging to debug the balance calculation
+logger = logging.getLogger(__name__)
+
+def manager_dashboard(request):
+    # Annotate agents with their balance using the related name 'transaction'
+    agents = Agent.objects.annotate(
+        balance=Sum(
+            Case(
+                When(transaction__transaction_type='credit', then=-F('transaction__amount')),
+                When(transaction__transaction_type='return', then=F('transaction__amount')),
+                default=Value(0, output_field=DecimalField()),
+                output_field=DecimalField()
+            ),
+            output_field=DecimalField()
+        )
+    )
+
+
+    # Update AgentBalance for each agent
+    for agent in agents:
+        agent_balance_obj, created = AgentBalance.objects.get_or_create(
+            agent=agent,
+            defaults={'amount': agent.balance if agent.balance is not None else 0}
+        )
+        if agent_balance_obj.amount != (agent.balance if agent.balance is not None else 0):
+            agent_balance_obj.amount = agent.balance if agent.balance is not None else 0
+            agent_balance_obj.save()
+            logger.debug(f"Updated AgentBalance for {agent.name}: {agent_balance_obj.amount}")
+
+    transactions = Transaction.objects.all()
 
     if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
-        name = request.POST['name']
-        phone_number = request.POST['phone_number']
-        whatsapp_number = request.POST['whatsapp_number']
-        address = request.POST['address']
-        pincode = request.POST['pincode']
+        agent_id = request.POST.get('agent_id')
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
 
-        user = User.objects.create_user(username=username, password=password)
-        agent_group, _ = Group.objects.get_or_create(name='Agent')
-        user.groups.add(agent_group)
+        # Filter transactions
+        filtered_transactions = transactions
+        if agent_id:
+            filtered_transactions = filtered_transactions.filter(agent__agent_id=agent_id)
+        if start_date:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d')
+            filtered_transactions = filtered_transactions.filter(transaction_date__gte=start_date)
+        if end_date:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d')
+            filtered_transactions = filtered_transactions.filter(transaction_date__lte=end_date)
 
-        manager = Manager.objects.get(user=request.user)
-        Agent.objects.create(
-            user=user,
-            name=name,
-            phone_number=phone_number,
-            whatsapp_number=whatsapp_number,
-            address=address,
-            pincode=pincode,
-            manager=manager
-        )
-        messages.success(request, "Agent created successfully.")
-        return redirect('manager_dashboard')
+        return render(request, 'manager/dashboard.html', {
+            'agents': agents,
+            'transactions': filtered_transactions,
+            'selected_agent': agent_id,
+            'start_date': start_date,
+            'end_date': end_date
+        })
 
-    return render(request, 'manager/agent_form.html')
-
+    # GET request: show all transactions
+    return render(request, 'manager/dashboard.html', {
+        'agents': agents,
+        'transactions': transactions
+    })
 
 
-        
+
+# Update login_view to redirect to manager_dashboard
 def login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
         user = authenticate(request, username=username, password=password)
         if user is not None:
-            auth_login(request, user)  # Log the user in to establish a session
+            auth_login(request, user)
             if user.groups.filter(name='Manager').exists():
                 return redirect('manager_dashboard')
             elif user.groups.filter(name='Agent').exists():
                 return redirect('agent_dashboard')
             else:
-                messages.error(request, 'User does not belong to any authorized group.')
+                messages.error(request, 'User does not belong Gluonsto any authorized group.')
         else:
             messages.error(request, 'Invalid username or password.')
     return render(request, 'registration/login.html')

@@ -1,33 +1,125 @@
-<!-- templates/manager/dashboard.html -->
 {% extends "base.html" %}
 {% block content %}
-<h2>Manager Dashboard</h2>
-<a href="{% url 'agent_create' %}">Create New Agent</a>
-<a href="{% url 'transaction_create' %}">Add Transaction</a>
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Manager Dashboard</h2>
+    <a href="{% url 'logout' %}" class="btn btn-outline-secondary">Logout</a>
+  </div>
 
-<h3>Agents</h3>
-<ul>
-    {% for agent in agents %}
-    <li>
-        {{ agent.name }} - {{ agent.phone_number }}
-        <a href="{% url 'agent_update' agent.pk %}">Edit</a> |
-        <a href="{% url 'agent_delete' agent.pk %}">Delete</a> |
-        <a href="{% url 'agent_block_toggle' agent.pk %}">
+  <div class="mb-4 d-flex gap-2">
+    <a href="{% url 'agent_create' %}" class="btn btn-primary">Create New Agent</a>
+    <a href="{% url 'transaction_create' %}" class="btn btn-success">Add Transaction</a>
+  </div>
+
+  <div class="mb-5">
+    <h3>Agents</h3>
+    <div class="list-group">
+      {% for agent in agents %}
+      <div class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+          <strong>{{ agent.name }}</strong> — {{ agent.phone_number }}<br>
+          <span class="text-muted">Balance: 
+            {% if agent.balance %}
+              {% if agent.balance < 0 %}
+                <span class="text-danger fw-bold">{{ agent.balance|floatformat:2 }}</span>
+              {% elif agent.balance > 0 %}
+                <span class="text-success fw-bold">{{ agent.balance|floatformat:2 }}</span>
+              {% else %}
+                <span>{{ agent.balance|floatformat:2 }}</span>
+              {% endif %}
+            {% else %}
+              <span>0.00</span>
+            {% endif %}
+          </span>
+        </div>
+        <div class="btn-group">
+          <a href="{% url 'agent_update' agent.agent_id %}" class="btn btn-sm btn-outline-primary">Edit</a>
+          <a href="{% url 'agent_delete' agent.agent_id %}" class="btn btn-sm btn-outline-danger">Delete</a>
+          <a href="{% url 'agent_block_toggle' agent.agent_id %}" class="btn btn-sm btn-outline-warning">
             {% if agent.is_active %}Block{% else %}Unblock{% endif %}
-        </a>
-    </li>
-    {% endfor %}
-</ul>
+          </a>
+        </div>
+      </div>
+      {% empty %}
+      <p class="text-muted">No agents available.</p>
+      {% endfor %}
+    </div>
+  </div>
 
-<h3>Transactions</h3>
-<ul>
-    {% for txn in transactions %}
-    <li>{{ txn.agent.name }} - ₹{{ txn.amount }} ({{ txn.transaction_type }})</li>
-    {% endfor %}
-</ul>
+  <div class="mt-5">
+    <h3 class="mb-3">Transactions</h3>
+    
+    <!-- Filter Form -->
+    <form method="post" class="mb-4">
+      {% csrf_token %}
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label for="agent_id" class="form-label">Filter by Agent</label>
+          <select name="agent_id" id="agent_id" class="form-select">
+            <option value="">All Agents</option>
+            {% for agent in agents %}
+            <option value="{{ agent.agent_id }}" {% if selected_agent and selected_agent == agent.agent_id|stringformat:"s" %}selected{% endif %}>
+              {{ agent.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label for="start_date" class="form-label">Start Date</label>
+          <input type="date" name="start_date" id="start_date" class="form-control" value="{% if start_date %}{{ start_date|date:'Y-m-d' }}{% endif %}">
+        </div>
+        <div class="col-md-3">
+          <label for="end_date" class="form-label">End Date</label>
+          <input type="date" name="end_date" id="end_date" class="form-control" value="{% if end_date %}{{ end_date|date:'Y-m-d' }}{% endif %}">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="submit" class="btn btn-primary w-100">Filter</button>
+        </div>
+      </div>
+    </form>
 
-
-<a href="{% url 'logout' %}">Logout</a>
+    {% if transactions %}
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">Agent</th>
+            <th scope="col">Date</th>
+            <th scope="col">Amount</th>
+            <th scope="col">Type</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for txn in transactions %}
+          <tr>
+            <td>{{ txn.agent.name }}</td>
+            <td>{{ txn.transaction_date|date:"Y-m-d" }}</td>
+            <td>
+              {% if txn.transaction_type == "return" %}
+                <span class="text-success fw-bold">{{ txn.amount }}</span>
+              {% elif txn.transaction_type == "credit" %}
+                <span class="text-danger fw-bold">{{ txn.amount }}</span>
+              {% else %}
+                <span class="text-secondary">{{ txn.amount }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if txn.transaction_type == "return" %}
+                <span class="text-success fw-bold">{{ txn.transaction_type }}</span>
+              {% elif txn.transaction_type == "credit" %}
+                <span class="text-danger fw-bold">{{ txn.transaction_type }}</span>
+              {% else %}
+                <span class="text-secondary">{{ txn.transaction_type }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-muted">No transactions available.</div>
+    {% endif %}
+  </div>
+</div>
 {% endblock %}
-
-

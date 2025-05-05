@@ -1,10 +1,14 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>Agent Dashboard</h3>
-<ul>
-  <li><a href="{% url 'store_create' %}">Add Store</a></li>
-  <li><a href="{% url 'create_bill' %}">Create Bill</a></li>
-</ul>
+<div class="container">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Agent Dashboard</h2>
+    <a href="{% url 'logout' %}" class="btn btn-outline-secondary">Logout</a>
+  </div>
 
-<a href="{% url 'logout' %}">Logout</a>
+  <div class="list-group">
+    <a href="{% url 'store_create' %}" class="list-group-item list-group-item-action">Add Store</a>
+    <a href="{% url 'create_bill' %}" class="list-group-item list-group-item-action">Create Bill</a>
+  </div>
+</div>
 {% endblock %}

@@ -1,21 +1,36 @@
-<!-- templates/manager/transaction_form.html -->
 {% extends "base.html" %}
 {% block content %}
-<h2>Create Transaction</h2>
-<form method="post">
-    {% csrf_token %}
-    <label>Agent:</label>
-    <select name="agent_id">
-        {% for agent in agents %}
-        <option value="{{ agent.id }}">{{ agent.name }}</option>
-        {% endfor %}
-    </select><br>
-    <label>Amount:</label><input type="number" name="amount"><br>
-    <label>Type:</label>
-    <select name="transaction_type">
-        <option value="Credit">Credit</option>
-        <option value="Debit">Debit</option>
-    </select><br>
-    <button type="submit">Submit</button>
-</form>
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <h2 class="mb-4 text-center">Create Transaction</h2>
+    <form method="post" class="card p-4 shadow-sm">
+      {% csrf_token %}
+
+      <div class="mb-3">
+        <label for="agent" class="form-label">Agent</label>
+        <select name="agent_id" id="agent" class="form-select" required>
+          <option value="" disabled selected>Select an agent</option>
+          {% for agent in agents %}
+          <option value="{{ agent.agent_id }}">{{agent.agent_id}} {{ agent.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label for="amount" class="form-label">Amount</label>
+        <input type="number" name="amount" id="amount" class="form-control" required>
+      </div>
+
+      <div class="mb-3">
+        <label for="type" class="form-label">Transaction Type</label>
+        <select name="transaction_type" id="type" class="form-select" required>
+          <option value="credit">credit</option>
+          <option value="return">return</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-success w-100">Submit</button>
+    </form>
+  </div>
+</div>
 {% endblock %}

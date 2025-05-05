@@ -52,7 +52,7 @@ class Agent(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.agent_id:
-            last = Agent.objects.order_by('-agent_id').first()
+            last = Agent.objects.order_by('agent_id').first()
             next_id = int(last.agent_id[3:]) + 1 if last else 1
             self.agent_id = f'AGT{next_id:07d}'
         super().save(*args, **kwargs)
@@ -60,6 +60,12 @@ class Agent(models.Model):
     def __str__(self):
         return self.name
     
+    def get_agent_id(self):
+        return self.agent_id
+
+
+
+
 class Store(models.Model):
     store_id = models.CharField(max_length=20, primary_key=True, editable=False)
     store_name = models.CharField(max_length=100)
@@ -82,10 +88,15 @@ class Store(models.Model):
             self.store_id = f'STR{next_id:08d}'
         super().save(*args, **kwargs)
 
+class AgentBalance(models.Model):
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2,default=0.00)
+
+
 class Transaction(models.Model):
     TRANSACTION_TYPE = (
-        ('credit', 'Credit'),
-        ('return', 'Credit Return')
+        ('credit', 'credit'),
+        ('return', 'return')
     )
     transaction_id = models.CharField(max_length=20, primary_key=True, editable=False)
     transaction_date = models.DateField(default=now)

@@ -1,13 +1,21 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>Create Bill</h3>
-<form method="post">
-    {% csrf_token %}
-    {{ bill_date_form.as_p }}
-    {{ formset.management_form }}
-    {% for form in formset %}
-        {{ form.as_p }}
-    {% endfor %}
-    <button class="btn btn-primary" type="submit">Generate PDF</button>
-</form>
+<div class="row justify-content-center">
+  <div class="col-md-10 col-lg-8">
+    <h2 class="mb-4 text-center">Create Bill</h2>
+    <form method="post" class="card p-4 shadow-sm">
+      {% csrf_token %}
+      <div class="mb-3">
+        {{ bill_date_form.as_p }}
+      </div>
+      {{ formset.management_form }}
+      {% for form in formset %}
+        <div class="mb-3 border p-3 rounded">
+          {{ form.as_p }}
+        </div>
+      {% endfor %}
+      <button class="btn btn-primary w-100" type="submit">Generate PDF</button>
+    </form>
+  </div>
+</div>
 {% endblock %}

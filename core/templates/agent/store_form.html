@@ -1,9 +1,13 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>Store Form</h3>
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button class="btn btn-success" type="submit">Save</button>
-</form>
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <h2 class="mb-4 text-center">Store Form</h2>
+    <form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button class="btn btn-success w-100" type="submit">Save</button>
+    </form>
+  </div>
+</div>
 {% endblock %}
