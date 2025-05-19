@@ -4,18 +4,67 @@ from django.utils.timezone import now
 from django.db import models
 from django.contrib.auth.models import User
 
+from django.db import models
+import base64
+
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+from django.utils.timezone import now
+from django.contrib.auth.models import User
+from django.db import transaction
+from django.db import IntegrityError
+import base64
+
+import base64
+from django.db import models, transaction
+
+
 class Product(models.Model):
     product_id = models.CharField(max_length=20, primary_key=True, editable=False)
     name = models.CharField(max_length=100)
     rr_price = models.DecimalField(max_digits=10, decimal_places=2)
     mr_price = models.DecimalField(max_digits=10, decimal_places=2)
+    product_photo = models.BinaryField(blank=True, null=True)
+    product_photo_mime = models.CharField(max_length=50, blank=True)
+    _base64_image = models.TextField(blank=True, null=True)  # Cache for base64 string
 
     def save(self, *args, **kwargs):
         if not self.product_id:
-            last = Product.objects.order_by('-product_id').first()
-            next_id = int(last.product_id[2:]) + 1 if last else 1
-            self.product_id = f'PR{next_id:08d}'
-        super().save(*args, **kwargs)
+            max_attempts = 10
+            for attempt in range(max_attempts):
+                try:
+                    with transaction.atomic():
+                        last = Product.objects.order_by('-product_id').first()
+                        next_id = int(last.product_id[2:]) + 1 if last else 1
+                        self.product_id = f'PR{next_id:08d}'
+                        # Set _base64_image before the first save
+                        if self.product_photo:
+                            self._base64_image = base64.b64encode(self.product_photo).decode('utf-8')
+                        else:
+                            self._base64_image = None
+                        super().save(*args, **kwargs)
+                        break
+                except IntegrityError:
+                    if attempt == max_attempts - 1:
+                        raise ValueError("Unable to generate a unique product_id after multiple attempts.")
+                    continue
+        else:
+            # Update _base64_image before saving
+            if self.product_photo:
+                self._base64_image = base64.b64encode(self.product_photo).decode('utf-8')
+            else:
+                self._base64_image = None
+            super().save(*args, **kwargs)
+
+    def get_image_data(self):
+        if self._base64_image and self.product_photo_mime:
+            return f"data:{self.product_photo_mime};base64,{self._base64_image}"
+        return '/static/no-image.png'
+
+    def get_mobile_image_data(self):
+        if self.product_photo:
+            return f"data:{self.product_photo_mime};base64,{base64.b64encode(self.product_photo).decode('utf-8')}"
+        return '/static/no-image.png'
 
 class Manager(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -130,3 +179,27 @@ class Bill(models.Model):
     @property
     def total_price(self):
         return self.count * self.product.rr_price
+    
+
+from django.db import models
+from django.utils.timezone import now
+
+class ManagerAgentTransaction(models.Model):
+    transaction = models.ForeignKey('Transaction', on_delete=models.CASCADE)
+    product = models.ForeignKey('Product', on_delete=models.CASCADE)
+    manager = models.ForeignKey('Manager', on_delete=models.CASCADE)
+    agent = models.ForeignKey('Agent', on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    transaction_date = models.DateField(default=now)
+
+    class Meta:
+        verbose_name = 'Manager-Agent Transaction'
+        verbose_name_plural = 'Manager-Agent Transactions'
+        unique_together = ('transaction', 'product')  # Ensure each transaction-product pair is unique
+
+    def __str__(self):
+        return f"{self.transaction.transaction_id} - {self.product.name} (Qty: {self.quantity})"
+
+    @property
+    def total_price(self):
+        return self.quantity * self.product.rr_price

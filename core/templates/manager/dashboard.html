@@ -3,12 +3,15 @@
 <div class="container">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="mb-0">Manager Dashboard</h2>
-    <a href="{% url 'logout' %}" class="btn btn-outline-secondary">Logout</a>
+    <a href="{% url 'logout' %}" class="btn btn-outline-secondary" onclick="return confirm('Are you sure you want to logout?');">Logout</a>
   </div>
 
-  <div class="mb-4 d-flex gap-2">
-    <a href="{% url 'agent_create' %}" class="btn btn-primary">Create New Agent</a>
+  <div class="mb-4 d-flex gap-2 flex-wrap">
+    <a href="{% url 'product_create' %}" class="btn btn-primary">Create New Product</a>
+    <a href="{% url 'agent_create' %}" class="btn btn-info">Create New Agent</a>
     <a href="{% url 'transaction_create' %}" class="btn btn-success">Add Transaction</a>
+    <a href="{% url 'manager_agent_transaction_create' %}" class="btn btn-info">Add Manager-Agent Transaction</a>
+    <a href="{% url 'manager_agent_transaction_list' %}" class="btn btn-warning">View Manager-Agent Transactions</a>
   </div>
 
   <div class="mb-5">
@@ -122,4 +125,59 @@
     {% endif %}
   </div>
 </div>
+
+<style>
+/* Ensure container doesn't overflow */
+.container {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* General mobile adjustments */
+.form-label {
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+.form-control, .form-select {
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+  height: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+.btn {
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+  transition: background-color 0.3s ease;
+}
+.btn:hover {
+  filter: brightness(90%);
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 767.98px) {
+  .form-label {
+    font-size: 0.85rem;
+  }
+  .form-control, .form-select {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.6rem;
+  }
+  .btn {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+  }
+  /* Stack filter form fields on mobile */
+  .row.g-3 > div {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+  .table-responsive {
+    font-size: 0.85rem;
+  }
+  .table th, .table td {
+    padding: 0.4rem;
+  }
+}
+</style>
 {% endblock %}

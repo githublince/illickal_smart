@@ -1,25 +1,23 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, authenticate, logout
+import logging
+from datetime import datetime
+
+from django import forms
+from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User, Group
-from django.contrib import messages
+from django.db.models import Sum, Case, When, Value, DecimalField, F
 from django.forms import modelformset_factory
 from django.http import FileResponse, HttpResponseForbidden
+from django.shortcuts import render, redirect, get_object_or_404
+from django.utils import timezone
+
 from core.forms import AgentForm, StoreForm, BillDateForm, BillForm
 from core.models import Agent, Manager, Store, Transaction, BillDate, Bill, Product
+
+from .models import Agent, Manager, Transaction, AgentBalance
 from .utils import generate_bill_pdf
-from django.contrib.auth import login as auth_login
-from django import forms
-from django.contrib.auth.models import User, Group
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from core.forms import AgentForm
-from .models import Agent, Manager
-from django.contrib.auth.models import User, Group
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from .models import Agent, Manager
 
 # Home page with Signup/Login links
 def home(request):
@@ -123,13 +121,7 @@ def download_bill(request, billno):
 
 
 
-from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden
-from django.shortcuts import render, redirect
-from django.contrib.auth.models import Group
-from django.contrib import messages
-from core.forms import AgentForm
-from .models import Manager
+
 
 @login_required
 def agent_create(request):
@@ -233,14 +225,7 @@ def transaction_create(request):
     return render(request, 'manager/transaction_form.html', {'agents': agents})
 
 
-from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login as auth_login
-from django.contrib import messages
-from .models import Agent, Transaction, AgentBalance
-from django.utils import timezone
-from datetime import datetime
-from django.db.models import Sum, Case, When, Value, DecimalField, F
-import logging
+
 
 # Set up logging to debug the balance calculation
 logger = logging.getLogger(__name__)
@@ -322,3 +307,241 @@ def login_view(request):
         else:
             messages.error(request, 'Invalid username or password.')
     return render(request, 'registration/login.html')
+
+
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from django.http import HttpResponseForbidden
+from django.contrib import messages
+from django.db import transaction as db_transaction
+from .forms import TransactionForm, ProductFormSet
+from .models import Manager, Transaction, ManagerAgentTransaction
+import logging
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from django.http import HttpResponseForbidden
+from django.contrib import messages
+from django.db import transaction as db_transaction
+from .forms import TransactionForm, ProductFormSet
+from .models import Manager, Transaction, ManagerAgentTransaction
+import logging
+
+logger = logging.getLogger(__name__)
+
+@login_required
+def manager_agent_transaction_create(request):
+    if not request.user.groups.filter(name='Manager').exists():
+        return HttpResponseForbidden("Unauthorized")
+    
+    if request.method == 'POST':
+        transaction_form = TransactionForm(request.POST)
+        product_formset = ProductFormSet(request.POST, prefix='products')
+        
+        if transaction_form.is_valid() and product_formset.is_valid():
+            valid_forms = [
+                form for form in product_formset
+                if form.cleaned_data and form.cleaned_data.get('product')
+            ]
+            if not valid_forms:
+                messages.error(request, "Please add at least one product to the transaction.")
+            else:
+                try:
+                    with db_transaction.atomic():
+                        manager = Manager.objects.get(user=request.user)
+                        transaction = transaction_form.save(commit=False)
+                        total_amount = sum(
+                            form.cleaned_data['quantity'] * form.cleaned_data['product'].rr_price
+                            for form in valid_forms
+                        )
+                        if total_amount <= 0:
+                            raise ValueError("Total amount must be positive.")
+                        transaction.amount = total_amount
+                        transaction.transaction_type = 'credit'
+                        transaction.save()
+                        
+                        for form in valid_forms:
+                            mat = form.save(commit=False)
+                            mat.transaction = transaction
+                            mat.manager = manager
+                            mat.agent = transaction.agent
+                            mat.transaction_date = transaction.transaction_date
+                            mat.save()
+                        
+                        messages.success(request, "Manager-Agent Transaction created successfully.")
+                        return redirect('manager_agent_transaction_list')
+                except Exception as e:
+                    logger.error(f"Transaction creation failed: {str(e)}")
+                    messages.error(request, f"An error occurred: {str(e)}")
+        else:
+            messages.error(request, "Please correct the errors in the form.")
+    else:
+        transaction_form = TransactionForm()
+        product_formset = ProductFormSet(prefix='products', initial=[{'quantity': 1}])  # Exactly one empty form
+    
+    return render(request, 'manager/manager_agent_transaction_form.html', {
+        'transaction_form': transaction_form,
+        'product_formset': product_formset,
+        'form_title': 'Create Manager-Agent Transaction'
+    })
+
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
+from django.http import HttpResponseForbidden
+from .models import ManagerAgentTransaction
+from datetime import datetime, date
+from calendar import monthrange, month_name
+from django.utils.timezone import now
+
+@login_required
+def manager_agent_transaction_list(request):
+    if not request.user.groups.filter(name='Manager').exists():
+        return HttpResponseForbidden("Unauthorized")
+    
+    # Get current date and query parameters
+    today = now().date()
+    selected_date = request.GET.get('date', today.strftime('%Y-%m-%d'))
+    show_all = request.GET.get('show_all', 'false').lower() == 'true'
+    
+    try:
+        selected_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+    except ValueError:
+        selected_date = today
+    
+    year = int(request.GET.get('year', today.year))
+    month = int(request.GET.get('month', today.month))
+
+    # Validate year and month
+    if month < 1:
+        month = 12
+        year -= 1
+    elif month > 12:
+        month = 1
+        year += 1
+
+    # Calculate previous and next month
+    prev_month = month - 1 if month > 1 else 12
+    prev_year = year if month > 1 else year - 1
+    next_month = month + 1 if month < 12 else 1
+    next_year = year if month < 12 else year + 1
+
+    # Generate calendar data
+    _, num_days = monthrange(year, month)
+    first_day = date(year, month, 1).weekday()  # 0=Mon, 6=Sun
+    calendar_days = []
+    week = [None] * first_day + [date(year, month, d) for d in range(1, num_days + 1)]
+    while week:
+        calendar_days.append(week[:7])
+        week = week[7:] if len(week) > 7 else []
+    if len(week) > 0:
+        calendar_days.append(week + [None] * (7 - len(week)))
+
+    # Fetch distinct transaction dates for the current month
+    start_date = date(year, month, 1)
+    end_date = date(year, month, num_days)
+    transaction_dates = set(
+        ManagerAgentTransaction.objects.filter(
+            transaction_date__range=[start_date, end_date]
+        ).values_list('transaction_date', flat=True).distinct()
+    )
+
+    # Fetch transactions
+    if show_all:
+        transactions = ManagerAgentTransaction.objects.select_related(
+            'transaction', 'product', 'manager', 'agent'
+        ).order_by('transaction__transaction_date', 'transaction__transaction_id', 'product__name')
+    else:
+        transactions = ManagerAgentTransaction.objects.select_related(
+            'transaction', 'product', 'manager', 'agent'
+        ).filter(transaction_date=selected_date).order_by('transaction__transaction_id', 'product__name')
+
+    # Group transactions by transaction_id and calculate grand total
+    grouped_transactions = {}
+    grand_total = 0
+    for txn in transactions:
+        txn_id = txn.transaction.transaction_id
+        if txn_id not in grouped_transactions:
+            grouped_transactions[txn_id] = {
+                'transaction': txn.transaction,
+                'items': [],
+                'total': 0
+            }
+        grouped_transactions[txn_id]['items'].append(txn)
+        grouped_transactions[txn_id]['total'] += txn.total_price
+        grand_total += txn.total_price
+
+    return render(request, 'manager/manager_agent_transaction_list.html', {
+        'grouped_transactions': grouped_transactions,
+        'calendar_days': calendar_days,
+        'selected_date': selected_date,
+        'today': today,
+        'year': year,
+        'month': month,
+        'month_name': month_name[month],
+        'prev_year': prev_year,
+        'prev_month': prev_month,
+        'next_year': next_year,
+        'next_month': next_month,
+        'show_all': show_all,
+        'grand_total': grand_total,
+        'transaction_dates': transaction_dates,
+    })
+
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from django.http import HttpResponseForbidden
+from django.contrib import messages
+from .forms import ProductCreateForm
+
+@login_required
+def product_create(request):
+    if not request.user.groups.filter(name='Manager').exists():
+        return HttpResponseForbidden("Unauthorized")
+    
+    if request.method == 'POST':
+        form = ProductCreateForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, "Product created successfully.")
+                return redirect('manager_dashboard')  # Or a product list view
+            except Exception as e:
+                messages.error(request, f"Error creating product: {str(e)}")
+        else:
+            messages.error(request, "Please correct the errors in the form.")
+    else:
+        form = ProductCreateForm()
+    
+    return render(request, 'manager/product_create.html', {
+        'form': form,
+        'form_title': 'Create Product'
+    })
+
+
+
+import logging
+from django.http import JsonResponse
+from .models import Product
+
+logger = logging.getLogger(__name__)
+
+def product_search(request):
+    try:
+        query = request.GET.get('q', '')
+        products = Product.objects.filter(name__icontains=query)[:10]
+        results = [
+            {
+                'id': product.product_id,
+                'text': product.name,  # Select2 expects 'text' for display
+                'image': product.get_image_data(),
+                'rr_price': float(product.rr_price)  # Convert Decimal to float for JSON
+            }
+            for product in products
+        ]
+        return JsonResponse({'results': results})
+    except Exception as e:
+        logger.error(f"Error in product_search: {str(e)}")
+        return JsonResponse({'results': []}, status=500)
+    

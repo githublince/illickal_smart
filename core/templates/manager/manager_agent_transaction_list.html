@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <h2>Manager-Agent Transactions</h2>
+  <div class="d-flex gap-2 mb-3">
+    <a href="{% url 'manager_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+    <a href="{% url 'manager_agent_transaction_list' %}?show_all=true" class="btn btn-primary">Show All Transactions</a>
+  </div>
+
+  <!-- Calendar -->
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <a href="{% url 'manager_agent_transaction_list' %}?year={{ prev_year }}&month={{ prev_month }}{% if show_all %}&show_all=true{% endif %}" class="btn btn-outline-primary">Previous</a>
+      <h5 class="mb-0">{{ month_name }} {{ year }}</h5>
+      <a href="{% url 'manager_agent_transaction_list' %}?year={{ next_year }}&month={{ next_month }}{% if show_all %}&show_all=true{% endif %}" class="btn btn-outline-primary">Next</a>
+    </div>
+    <div class="card-body">
+      <table class="table table-bordered text-center">
+        <thead>
+          <tr>
+            <th>Mon</th>
+            <th>Tue</th>
+            <th>Wed</th>
+            <th>Thu</th>
+            <th>Fri</th>
+            <th>Sat</th>
+            <th>Sun</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for week in calendar_days %}
+          <tr>
+            {% for day in week %}
+            <td>
+              {% if day %}
+              <a href="{% url 'manager_agent_transaction_list' %}?date={{ day|date:'Y-m-d' }}&year={{ year }}&month={{ month }}"
+                 class="btn btn-sm {% if day == selected_date and not show_all %}btn-primary{% elif day == today %}btn-info{% elif day in transaction_dates %}btn-success{% else %}btn-outline-secondary{% endif %} w-100">
+                {{ day.day }}
+              </a>
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Transactions -->
+  <h3>{% if show_all %}All Transactions{% else %}Transactions for {{ selected_date|date:"Y-m-d" }}{% endif %}</h3>
+  {% for txn_id, data in grouped_transactions.items %}
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0">Transaction ID: {{ txn_id }}</h5>
+      <p class="mb-0">Date: {{ data.transaction.transaction_date|date:"Y-m-d" }}</p>
+      <p class="mb-0">Agent: {{ data.transaction.agent.name }}</p>
+      <p class="mb-0"><strong>Transaction Total (Sum of Product Prices):</strong> ₹{{ data.total|floatformat:2 }}</p>
+    </div>
+    <div class="card-body">
+      <table class="table table-bordered table-striped">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Unit Price</th>
+            <th>Total Price</th>
+            <th>Manager</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in data.items %}
+          <tr>
+            <td>{{ item.product.name }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>₹{{ item.product.rr_price|floatformat:2 }}</td>
+            <td>₹{{ item.total_price|floatformat:2 }}</td>
+            <td>{{ item.manager.name }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% empty %}
+  <p class="text-muted">No Manager-Agent Transactions {% if show_all %}available{% else %}for this date{% endif %}.</p>
+  {% endfor %}
+
+  <!-- Grand Total -->
+  {% if grouped_transactions %}
+  <div class="card mt-4">
+    <div class="card-body text-end">
+      <h4>Grand Total (All Transactions): ₹{{ grand_total|floatformat:2 }}</h4>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

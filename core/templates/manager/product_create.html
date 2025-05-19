@@ -1,0 +1,46 @@
+
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <h2>{{ form_title }}</h2>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="card mb-4">
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Name</label>
+            {{ form.name }}
+            {% if form.name.errors %}
+            <div class="text-danger">{{ form.name.errors }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">RR Price</label>
+            {{ form.rr_price }}
+            {% if form.rr_price.errors %}
+            <div class="text-danger">{{ form.rr_price.errors }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">MR Price</label>
+            {{ form.mr_price }}
+            {% if form.mr_price.errors %}
+            <div class="text-danger">{{ form.mr_price.errors }}</div>
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Product Photo</label>
+            {{ form.product_photo }}
+            {% if form.product_photo.errors %}
+            <div class="text-danger">{{ form.product_photo.errors }}</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Save Product</button>
+    <a href="{% url 'manager_dashboard' %}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+{% endblock %}

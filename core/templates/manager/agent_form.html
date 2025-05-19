@@ -1,104 +1,258 @@
 {% extends "base.html" %}
 {% block content %}
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+      <h2 class="mb-4 text-center">{{ form_title|default:"Create Agent" }}</h2>
+      <form method="post" class="card p-4 shadow-sm">
+        {% csrf_token %}
 
-<div class="row justify-content-center">
-  <div class="col-md-8 col-lg-6">
-    <h2 class="mb-4 text-center">{{ form_title|default:"Create Agent" }}</h2>
-    <form method="post" class="card p-4 shadow-sm">
-      {% csrf_token %}
-      
-     
-      <!-- Non-field errors -->
-      {% if form.non_field_errors %}
-        <div class="alert alert-danger">
-          {% for error in form.non_field_errors %}
-            {{ error }}
+        <!-- Non-field errors -->
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {% for error in form.non_field_errors %}
+              {{ error }}
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <!-- Username -->
+        <div class="mb-3">
+          <label class="form-label" for="{{ form.username.id_for_label }}">Username</label>
+          {{ form.username }}
+          {% for error in form.username.errors %}
+            <div class="text-danger small">{{ error }}</div>
           {% endfor %}
         </div>
-      {% endif %}
-      
 
-      <!-- Username -->
-      <div class="mb-3">
-        <label class="form-label" for="{{ form.username.id_for_label }}">Username</label>
-        {{ form.username }}
-        {% for error in form.username.errors %}
-          <div class="text-danger small">{{ error }}</div>
-        {% endfor %}
-      </div>
+        <!-- Password -->
+        <div class="mb-3 position-relative">
+          <label class="form-label" for="{{ form.password.id_for_label }}">Password</label>
+          <div class="input-group">
+            {{ form.password }}
+            <button type="button" class="btn btn-outline-secondary toggle-password" data-target="{{ form.password.id_for_label }}">
+              <i class="bi bi-eye"></i>
+            </button>
+          </div>
+          {% for error in form.password.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
+        </div>
 
-      <!-- Password -->
-      <div class="mb-3">
-        <label class="form-label" for="{{ form.password.id_for_label }}">Password</label>
-        {{ form.password }}
-        {% for error in form.password.errors %}
-          <div class="text-danger small">{{ error }}</div>
-        {% endfor %}
-      </div>
+        <!-- Name -->
+        <div class="mb-3">
+          <label class="form-label" for="{{ form.name.id_for_label }}">Name</label>
+          {{ form.name }}
+          {% for error in form.name.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
+        </div>
 
-      <!-- Name -->
-      <div class="mb-3">
-        <label class="form-label" for="{{ form.name.id_for_label }}">Name</label>
-        {{ form.name }}
-        {% for error in form.name.errors %}
-          <div class="text-danger small">{{ error }}</div>
-        {% endfor %}
-      </div>
+        <!-- Phone Number -->
+        <div class="mb-3">
+          <label class="form-label" for="{{ form.phone_number.id_for_label }}">Phone Number</label>
+          {{ form.phone_number }}
+          {% for error in form.phone_number.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
+        </div>
 
-      <!-- Phone Number -->
-      <div class="mb-3">
-        <label class="form-label" for="{{ form.phone_number.id_for_label }}">Phone Number</label>
-        {{ form.phone_number }}
-        {% for error in form.phone_number.errors %}
-          <div class="text-danger small">{{ error }}</div>
-        {% endfor %}
-      </div>
+        <!-- WhatsApp Number -->
+        <div class="mb-3">
+          <label class="form-label" for="{{ form.whatsapp_number.id_for_label }}">WhatsApp Number</label>
+          {{ form.whatsapp_number }}
+          {% for error in form.whatsapp_number.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
+        </div>
 
-      <!-- WhatsApp Number -->
-      <div class="mb-3">
-        <label class="form-label" for="{{ form.whatsapp_number.id_for_label }}">WhatsApp Number</label>
-        {{ form.whatsapp_number }}
-        {% for error in form.whatsapp_number.errors %}
-          <div class="text-danger small">{{ error }}</div>
-        {% endfor %}
-      </div>
+        <!-- Same as Phone Checkbox -->
+        <div class="form-check mb-3">
+          {{ form.same_as_phone }}
+          <label class="form-check-label" for="{{ form.same_as_phone.id_for_label }}">
+            WhatsApp same as phone
+          </label>
+        </div>
 
-      <!-- Same as Phone Checkbox -->
-      <div class="form-check mb-3">
-        {{ form.same_as_phone }}
-        <label class="form-check-label" for="{{ form.same_as_phone.id_for_label }}">
-          WhatsApp same as phone
-        </label>
-      </div>
+        <!-- Address -->
+        <div class="mb-3">
+          <label class="form-label" for="{{ form.address.id_for_label }}">Address</label>
+          {{ form.address }}
+          {% for error in form.address.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
+        </div>
 
-      <!-- Address -->
-      <div class="mb-3">
-        <label class="form-label" for="{{ form.address.id_for_label }}">Address</label>
-        {{ form.address }}
-        {% for error in form.address.errors %}
-          <div class="text-danger small">{{ error }}</div>
-        {% endfor %}
-      </div>
+        <!-- Pincode -->
+        <div class="mb-3">
+          <label class="form-label" for="{{ form.pincode.id_for_label }}">Pincode</label>
+          {{ form.pincode }}
+          {% for error in form.pincode.errors %}
+            <div class="text-danger small">{{ error }}</div>
+          {% endfor %}
+        </div>
 
-      <!-- Pincode -->
-      <div class="mb-3">
-        <label class="form-label" for="{{ form.pincode.id_for_label }}">Pincode</label>
-        {{ form.pincode }}
-        {% for error in form.pincode.errors %}
-          <div class="text-danger small">{{ error }}</div>
-        {% endfor %}
-      </div>
+        <!-- Is Active -->
+        <div class="form-check mb-3">
+          {{ form.is_active }}
+          <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+            Active
+          </label>
+        </div>
 
-      <!-- Is Active -->
-      <div class="form-check mb-3">
-        {{ form.is_active }}
-        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
-          Active
-        </label>
-      </div>
-
-      <button type="submit" class="btn btn-primary w-100">Save Agent</button>
-    </form>
+        <div class="d-flex flex-column flex-md-row gap-2">
+          <button type="submit" class="btn btn-primary w-100 w-md-auto">Save Agent</button>
+          <a href="{% url 'manager_dashboard' %}" class="btn btn-secondary w-100 w-md-auto">Cancel</a>
+        </div>
+      </form>
+    </div>
   </div>
 </div>
+
+<!-- Include Bootstrap Icons for password toggle -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
+<style>
+/* General mobile adjustments */
+.container {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+.form-label {
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+.form-control, .form-select, .form-check-input {
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+  height: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+.btn {
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+  transition: background-color 0.3s ease;
+}
+.btn:hover {
+  filter: brightness(90%);
+}
+.card {
+  border-radius: 0.5rem;
+  border: 1px solid #dee2e6;
+}
+
+/* Password toggle icon */
+.toggle-password i.bi-eye-slash::before {
+  content: "\f2f9";
+}
+.input-group .form-control {
+  border-right: 0;
+}
+.input-group .btn {
+  border-left: 0;
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 767.98px) {
+  .form-label {
+    font-size: 0.85rem;
+  }
+  .form-control, .form-select, .form-check-input {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.6rem;
+  }
+  .btn {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+  }
+  .form-check-label {
+    font-size: 0.85rem;
+  }
+  .card {
+    padding: 1rem !important;
+  }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Add placeholders
+  document.getElementById('{{ form.username.id_for_label }}').placeholder = 'Enter username';
+  document.getElementById('{{ form.password.id_for_label }}').placeholder = 'Enter password';
+  document.getElementById('{{ form.name.id_for_label }}').placeholder = 'Enter full name';
+  document.getElementById('{{ form.phone_number.id_for_label }}').placeholder = 'Enter phone number';
+  document.getElementById('{{ form.whatsapp_number.id_for_label }}').placeholder = 'Enter WhatsApp number';
+  document.getElementById('{{ form.address.id_for_label }}').placeholder = 'Enter address';
+  document.getElementById('{{ form.pincode.id_for_label }}').placeholder = 'Enter pincode';
+
+  // Set is_active to checked by default
+  document.getElementById('{{ form.is_active.id_for_label }}').checked = true;
+
+  // WhatsApp same as phone logic
+  const phoneInput = document.getElementById('{{ form.phone_number.id_for_label }}');
+  const whatsappInput = document.getElementById('{{ form.whatsapp_number.id_for_label }}');
+  const sameAsPhoneCheckbox = document.getElementById('{{ form.same_as_phone.id_for_label }}');
+
+  sameAsPhoneCheckbox.addEventListener('change', function() {
+    if (this.checked) {
+      whatsappInput.value = phoneInput.value;
+      whatsappInput.disabled = true;
+    } else {
+      whatsappInput.value = '';
+      whatsappInput.disabled = false;
+    }
+  });
+
+  phoneInput.addEventListener('input', function() {
+    if (sameAsPhoneCheckbox.checked) {
+      whatsappInput.value = this.value;
+    }
+  });
+
+  // Client-side validation for phone and WhatsApp numbers
+  phoneInput.addEventListener('input', function() {
+    this.value = this.value.replace(/[^0-9]/g, '');
+    if (this.value.length > 10) {
+      this.value = this.value.slice(0, 10);
+    }
+  });
+
+  whatsappInput.addEventListener('input', function() {
+    if (!sameAsPhoneCheckbox.checked) {
+      this.value = this.value.replace(/[^0-9]/g, '');
+      if (this.value.length > 10) {
+        this.value = this.value.slice(0, 10);
+      }
+    }
+  });
+
+  // Client-side validation for pincode
+  const pincodeInput = document.getElementById('{{ form.pincode.id_for_label }}');
+  pincodeInput.addEventListener('input', function() {
+    this.value = this.value.replace(/[^0-9]/g, '');
+    if (this.value.length > 6) {
+      this.value = this.value.slice(0, 6);
+    }
+  });
+
+  // Password visibility toggle
+  document.querySelectorAll('.toggle-password').forEach(button => {
+    button.addEventListener('click', function() {
+      const targetId = this.getAttribute('data-target');
+      const input = document.getElementById(targetId);
+      const icon = this.querySelector('i');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('bi-eye');
+        icon.classList.add('bi-eye-slash');
+      } else {
+        input.type = 'password';
+        icon.classList.remove('bi-eye-slash');
+        icon.classList.add('bi-eye');
+      }
+    });
+  });
+});
+</script>
 {% endblock %}
